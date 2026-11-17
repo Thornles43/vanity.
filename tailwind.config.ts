@@ -1,0 +1,100 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        surface: "#fef8f3",
+        background: "#fef8f3",
+        "surface-bright": "#fef8f3",
+        "surface-dim": "#ded9d4",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low": "#f8f3ee",
+        "surface-container": "#f2ede8",
+        "surface-container-high": "#ece7e2",
+        "surface-container-highest": "#e6e2dd",
+        "surface-variant": "#e6e2dd",
+        "on-surface": "#1d1b19",
+        "on-background": "#1d1b19",
+        "on-surface-variant": "#51443f",
+        outline: "#83746e",
+        "outline-variant": "#d6c3bc",
+        primary: "#805341",
+        "on-primary": "#ffffff",
+        "primary-container": "#c9937e",
+        "on-primary-container": "#522d1d",
+        "primary-fixed": "#ffdbce",
+        "primary-fixed-dim": "#f4b9a3",
+        "on-primary-fixed": "#311306",
+        secondary: "#7f5162",
+        "secondary-container": "#fdc1d6",
+        "on-secondary-container": "#7a4c5e",
+        "secondary-fixed": "#ffd9e4",
+        "on-secondary-fixed-variant": "#653a4b",
+        tertiary: "#735c00",
+        "tertiary-container": "#bf9c24",
+        "tertiary-fixed": "#ffe088",
+        "tertiary-fixed-dim": "#e9c349",
+        "on-tertiary-fixed": "#241a00",
+        error: "#a32a2a",
+        "error-container": "#faebea",
+        "on-error-container": "#631313",
+        gold: "#c59f60",
+        "gold-light": "#ecd8a5",
+        "gold-dark": "#8a662d",
+        cocoa: "#311306",
+        mocha: "#522d1d",
+      },
+      spacing: {
+        margin: "1.25rem",
+        "space-xs": "0.25rem",
+        "space-sm": "0.5rem",
+        "space-md": "1rem",
+        "space-lg": "1.5rem",
+        "space-xl": "2.75rem",
+      },
+      fontFamily: {
+        sans: ["Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["Playfair Display", "ui-serif", "Georgia", "serif"],
+      },
+      boxShadow: {
+        luxe: "0 4px 20px -2px rgba(92,60,48,0.08), 0 2px 6px -1px rgba(92,60,48,0.05)",
+        "luxe-lg": "0 8px 30px rgba(201,147,126,0.18)",
+        glow: "0 0 25px -3px rgba(201,147,126,0.35), 0 0 10px -2px rgba(233,195,73,0.2)",
+      },
+      keyframes: {
+        scanline: {
+          "0%": { top: "10%" },
+          "50%": { top: "88%" },
+          "100%": { top: "10%" },
+        },
+        floaty: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        popin: {
+          "0%": { opacity: "0", transform: "scale(0.96) translateY(8px)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        toast: {
+          "0%": { opacity: "0", transform: "translate(-50%, 12px)" },
+          "100%": { opacity: "1", transform: "translate(-50%, 0)" },
+        },
+      },
+      animation: {
+        scanline: "scanline 1.8s ease-in-out infinite",
+        floaty: "floaty 3.2s ease-in-out infinite",
+        popin: "popin 0.4s ease-out both",
+        toast: "toast 0.25s ease-out both",
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
