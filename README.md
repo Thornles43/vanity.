@@ -25,5 +25,5 @@ né database, quindi resta nel piano gratuito con banda illimitata.
 
 ## Prossimi passi
 
-- Accesso con Google e dati salvati per utente (Supabase).
+- Accesso con email e password (Supabase) e Scrigno per utente: fatto.
 - Schermate dal design Stitch "Haute Boudoir": Scansione, Rituali, Dettaglio prodotto.

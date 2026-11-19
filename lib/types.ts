@@ -1,21 +1,33 @@
-export type Routine = "morning" | "night" | "extra";
+export type Category =
+  | "Skincare"
+  | "Make-up"
+  | "Labbra"
+  | "Occhi"
+  | "Capelli"
+  | "Altro";
 
-export type Category = "Skincare" | "Make-up" | "Labbra" | "Occhi" | "Capelli";
+export interface CatalogProduct {
+  id: string;
+  barcode: string | null;
+  name: string;
+  brand: string | null;
+  category: Category;
+  imageUrl: string | null;
+}
 
+/** Un esemplare nello Scrigno dell'utente. */
 export interface Product {
   id: string;
-  brand: string;
+  catalogId: string;
+  barcode: string | null;
   name: string;
+  brand: string | null;
   category: Category;
-  routines: Routine[];
-  emoji: string;
-  size: string;
-  /** Prezzo di acquisto in euro */
-  price: number;
-  /** Mesi di validità dopo l'apertura (simbolo PAO sulla confezione) */
+  imageUrl: string | null;
+  /** Data di apertura, formato YYYY-MM-DD */
+  openedOn: string;
+  /** Mesi di validità dopo l'apertura (simbolo PAO) */
   paoMonths: number;
-  /** Da quanti giorni il prodotto è stato aperto */
-  openedDaysAgo: number;
 }
 
 export type ExpiryLevel = "green" | "yellow" | "red";

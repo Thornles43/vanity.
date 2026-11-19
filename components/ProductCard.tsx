@@ -1,13 +1,13 @@
 "use client";
 
-import { BadgeCheck, AlertTriangle, Hourglass } from "lucide-react";
-import { ROUTINE_EMOJI } from "@/lib/data";
-import { getExpiryInfo } from "@/lib/expiry";
+import { BadgeCheck, AlertTriangle, Hourglass, Trash2 } from "lucide-react";
+import { daysSince, getExpiryInfo } from "@/lib/expiry";
 import type { ExpiryLevel, Product } from "@/lib/types";
 
 interface ProductCardProps {
   product: Product;
   isNew?: boolean;
+  onRemove: (id: string) => void;
 }
 
 const LEVEL_STYLES: Record<
@@ -40,10 +40,11 @@ const LEVEL_STYLES: Record<
   },
 };
 
-export default function ProductCard({ product, isNew }: ProductCardProps) {
+export default function ProductCard({ product, isNew, onRemove }: ProductCardProps) {
   const info = getExpiryInfo(product);
   const style = LEVEL_STYLES[info.level];
   const { Icon } = style;
+  const opened = daysSince(product.openedOn);
 
   return (
     <article
@@ -52,14 +53,19 @@ export default function ProductCard({ product, isNew }: ProductCardProps) {
       }`}
     >
       <div className="flex items-start gap-3.5">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border border-gold/20 bg-surface-container-low text-4xl">
-          {product.emoji}
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gold/20 bg-surface-container-low text-4xl">
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={product.imageUrl} alt="" className="h-full w-full object-contain" />
+          ) : (
+            "🧴"
+          )}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center justify-between gap-2">
             <span className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
-              {product.brand}
+              {product.brand ?? "—"}
             </span>
             <span className="flex shrink-0 items-center gap-1.5">
               <span
@@ -72,23 +78,13 @@ export default function ProductCard({ product, isNew }: ProductCardProps) {
               </span>
             </span>
           </div>
-          <h3 className="mt-0.5 truncate font-serif text-[17px] font-semibold text-on-surface">
+          <h3 className="mt-0.5 line-clamp-2 font-serif text-[17px] font-semibold text-on-surface">
             {product.name}
           </h3>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <div className="mt-1.5">
             <span className="rounded-full border border-outline-variant/60 bg-surface px-2.5 py-0.5 text-[11px] text-on-surface-variant">
               {product.category}
             </span>
-            {product.routines.map((r) => (
-              <span
-                key={r}
-                title={r}
-                className="rounded-full border border-gold/30 bg-surface-container-low px-2 py-0.5 text-[11px] text-primary"
-              >
-                {ROUTINE_EMOJI[r]}
-              </span>
-            ))}
-            <span className="text-[11px] text-on-surface-variant">{product.size}</span>
           </div>
         </div>
       </div>
@@ -110,8 +106,20 @@ export default function ProductCard({ product, isNew }: ProductCardProps) {
           />
         </div>
         <div className="flex items-center justify-between pt-0.5 text-[11px] text-on-surface-variant">
-          <span>Aperto: {product.openedDaysAgo === 0 ? "oggi" : `${product.openedDaysAgo} giorni fa`}</span>
-          <span className="font-medium text-primary">€{product.price}</span>
+          <span>Aperto: {opened <= 0 ? "oggi" : `${opened} giorni fa`}</span>
+          <button
+            type="button"
+            aria-label={`Rimuovi ${product.name}`}
+            onClick={() => {
+              if (window.confirm(`Rimuovere "${product.name}" dal tuo Scrigno?`)) {
+                onRemove(product.id);
+              }
+            }}
+            className="flex items-center gap-1 text-error"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Rimuovi
+          </button>
         </div>
       </div>
     </article>

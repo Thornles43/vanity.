@@ -1,13 +1,12 @@
 "use client";
 
-import { Archive, ScanLine, Sparkles, UserRound } from "lucide-react";
+import { Archive, ScanLine, UserRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export type Tab = "vault" | "feed" | "profile";
+export type Tab = "vault" | "profile";
 
 const TABS: { id: Tab; label: string; Icon: LucideIcon; caption: string }[] = [
   { id: "vault", label: "Scrigno", Icon: Archive, caption: "Beauty Boudoir" },
-  { id: "feed", label: "Magia", Icon: Sparkles, caption: "Le Club de Beauté" },
   { id: "profile", label: "Profilo", Icon: UserRound, caption: "Boudoir Privé" },
 ];
 
