@@ -17,7 +17,12 @@ interface ScanFlowProps {
 type Stage =
   | { kind: "scan" }
   | { kind: "looking"; ean: string }
-  | { kind: "form"; ean: string | null; found: CatalogProduct | null };
+  | {
+      kind: "form";
+      ean: string | null;
+      found: CatalogProduct | null;
+      offline?: boolean;
+    };
 
 export default function ScanFlow({ onClose, onAdded }: ScanFlowProps) {
   const [stage, setStage] = useState<Stage>({ kind: "scan" });
@@ -36,8 +41,8 @@ export default function ScanFlow({ onClose, onAdded }: ScanFlowProps) {
 
   const handleCode = async (ean: string) => {
     setStage({ kind: "looking", ean });
-    const found = await lookupBarcode(ean);
-    setStage({ kind: "form", ean, found });
+    const { product, allFailed } = await lookupBarcode(ean);
+    setStage({ kind: "form", ean, found: product, offline: allFailed });
   };
 
   const submitManualCode = () => {
@@ -187,8 +192,9 @@ export default function ScanFlow({ onClose, onAdded }: ScanFlowProps) {
               <div className="flex flex-col gap-3">
                 {stage.ean && (
                   <p className="rounded-xl bg-surface-container-low p-3 text-[13px] text-on-surface-variant">
-                    Non ho trovato il codice {stage.ean} in nessuna banca dati. Inserisci
-                    i dati una volta: li ricorderò per la prossima volta.
+                    {stage.offline
+                      ? `Non riesco a contattare le banche dati (connessione assente o bloccata). Il codice letto è ${stage.ean}: puoi inserire i dati a mano.`
+                      : `Il codice ${stage.ean} non è in nessuna banca dati che consulto. Inserisci i dati una volta sola: dalla prossima scansione lo ritroverò da solo.`}
                   </p>
                 )}
                 <input

@@ -7,6 +7,9 @@ export interface ExternalProduct {
   imageUrl: string | null;
 }
 
+/** "none" = la fonte risponde ma non conosce il codice; "error" = fonte irraggiungibile. */
+export type SourceResult = ExternalProduct | "none" | "error";
+
 /** Restituisce il codice solo se è un EAN/UPC plausibile (8, 12, 13 o 14 cifre). */
 export function normalizeEan(raw: string): string | null {
   const digits = raw.replace(/\s+/g, "");
@@ -26,38 +29,108 @@ export function mapCategory(text: string | undefined | null): Category {
   return "Altro";
 }
 
-/** Cerca un prodotto su Open Beauty Facts. null se non trovato, lento o in errore. */
-export async function fetchOpenBeautyFacts(
-  ean: string,
-  fetchImpl: typeof fetch = fetch,
-  timeoutMs = 6000
-): Promise<ExternalProduct | null> {
+async function getJson(
+  url: string,
+  fetchImpl: typeof fetch,
+  timeoutMs: number
+): Promise<{ ok: boolean; json: unknown } | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const url = `https://world.openbeautyfacts.org/api/v2/product/${ean}.json?fields=product_name,brands,categories,image_front_small_url`;
     const res = await fetchImpl(url, { signal: controller.signal });
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      status?: number;
-      product?: {
-        product_name?: string;
-        brands?: string;
-        categories?: string;
-        image_front_small_url?: string;
-      };
-    };
-    const p = data.product;
-    if (data.status !== 1 || !p?.product_name?.trim()) return null;
-    return {
-      name: p.product_name.trim(),
-      brand: p.brands?.split(",")[0]?.trim() || null,
-      category: mapCategory(p.categories),
-      imageUrl: p.image_front_small_url || null,
-    };
+    let json: unknown = null;
+    try {
+      json = await res.json();
+    } catch {
+      /* corpo non JSON */
+    }
+    return { ok: res.ok, json };
   } catch {
     return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Open Beauty / Products / Food Facts: stessa API, host diverso. */
+export async function fetchOpenFacts(
+  host: string,
+  ean: string,
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs = 6000
+): Promise<SourceResult> {
+  const url = `https://${host}/api/v2/product/${ean}.json?fields=product_name,brands,categories,image_front_small_url`;
+  const res = await getJson(url, fetchImpl, timeoutMs);
+  if (!res) return "error";
+  const data = res.json as {
+    status?: number;
+    product?: {
+      product_name?: string;
+      brands?: string;
+      categories?: string;
+      image_front_small_url?: string;
+    };
+  } | null;
+  // 404 con status 0 è la risposta normale per "codice sconosciuto"
+  if (!res.ok && res.json === null) return "error";
+  const p = data?.product;
+  if (data?.status !== 1 || !p?.product_name?.trim()) return "none";
+  return {
+    name: p.product_name.trim(),
+    brand: p.brands?.split(",")[0]?.trim() || null,
+    category: mapCategory(p.categories),
+    imageUrl: p.image_front_small_url || null,
+  };
+}
+
+/** UPCitemdb, endpoint di prova gratuito (circa 100 ricerche al giorno). */
+export async function fetchUpcItemDb(
+  ean: string,
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs = 6000
+): Promise<SourceResult> {
+  const res = await getJson(
+    `https://api.upcitemdb.com/prod/trial/lookup?upc=${ean}`,
+    fetchImpl,
+    timeoutMs
+  );
+  if (!res) return "error";
+  const data = res.json as {
+    code?: string;
+    items?: { title?: string; brand?: string; category?: string; images?: string[] }[];
+  } | null;
+  if (!res.ok && !data?.items) {
+    // 404 NOT_FOUND = sconosciuto; altri errori (429 limite giornaliero) = fonte non disponibile
+    return data?.code === "NOT_FOUND" ? "none" : "error";
+  }
+  const item = data?.items?.[0];
+  if (!item?.title?.trim()) return "none";
+  return {
+    name: item.title.trim(),
+    brand: item.brand?.trim() || null,
+    category: mapCategory(`${item.category ?? ""} ${item.title}`),
+    imageUrl: item.images?.[0] || null,
+  };
+}
+
+const SOURCES: ((ean: string, f: typeof fetch) => Promise<SourceResult>)[] = [
+  (ean, f) => fetchOpenFacts("world.openbeautyfacts.org", ean, f),
+  (ean, f) => fetchOpenFacts("world.openproductsfacts.org", ean, f),
+  (ean, f) => fetchUpcItemDb(ean, f),
+  (ean, f) => fetchOpenFacts("world.openfoodfacts.org", ean, f),
+];
+
+/** Interroga tutte le fonti insieme; vince la prima, in ordine di priorità, che conosce il codice. */
+export async function lookupExternal(
+  ean: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<{ product: ExternalProduct | null; allFailed: boolean }> {
+  const results = await Promise.all(SOURCES.map((s) => s(ean, fetchImpl)));
+  const hit = results.find(
+    (r): r is ExternalProduct => r !== "none" && r !== "error"
+  );
+  return {
+    product: hit ?? null,
+    allFailed: !hit && results.every((r) => r === "error"),
+  };
 }

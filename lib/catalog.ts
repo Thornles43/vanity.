@@ -1,4 +1,4 @@
-import { fetchOpenBeautyFacts } from "./barcode";
+import { lookupExternal } from "./barcode";
 import { supabase } from "./supabase";
 import type { CatalogProduct, Category } from "./types";
 
@@ -68,16 +68,22 @@ export async function saveCatalogProduct(
   return toCatalogProduct(data as CatalogRow);
 }
 
-/** Catalogo condiviso, poi Open Beauty Facts. null se non lo trova nessuno. */
-export async function lookupBarcode(ean: string): Promise<CatalogProduct | null> {
-  const known = await findInCatalog(ean);
-  if (known) return known;
+export interface LookupResult {
+  product: CatalogProduct | null;
+  /** true se nessuna banca dati esterna è stata raggiungibile (connessione assente?) */
+  allFailed: boolean;
+}
 
-  const external = await fetchOpenBeautyFacts(ean);
-  if (!external) return null;
+/** Catalogo condiviso, poi le banche dati esterne. */
+export async function lookupBarcode(ean: string): Promise<LookupResult> {
+  const known = await findInCatalog(ean);
+  if (known) return { product: known, allFailed: false };
+
+  const { product: external, allFailed } = await lookupExternal(ean);
+  if (!external) return { product: null, allFailed };
 
   try {
-    return await saveCatalogProduct({
+    const saved = await saveCatalogProduct({
       barcode: ean,
       name: external.name,
       brand: external.brand,
@@ -85,7 +91,8 @@ export async function lookupBarcode(ean: string): Promise<CatalogProduct | null>
       imageUrl: external.imageUrl,
       source: "openbeautyfacts",
     });
+    return { product: saved, allFailed: false };
   } catch {
-    return null;
+    return { product: null, allFailed: false };
   }
 }
